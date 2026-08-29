@@ -733,6 +733,32 @@ input:focus, select:focus, textarea:focus { border-color: var(--brand); outline:
 .fields label { display: block; font-weight: 600; margin-bottom: 0.35rem; }
 .fields label small { font-weight: 400; color: var(--ink-soft); margin-left: 0.35rem; }
 
+.pay-choice { display: grid; gap: 0.6rem; }
+@media (min-width: 480px) { .pay-choice { grid-template-columns: 1fr 1fr; } }
+.pay-opt {
+  position: relative;
+  padding: 0.9rem 1rem;
+  border: 1.5px solid var(--line-strong);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: border-color 0.18s var(--ease), background-color 0.18s var(--ease);
+}
+.pay-opt input { position: absolute; opacity: 0; width: 0; height: 0; }
+.pay-opt:hover { border-color: var(--ink); }
+.pay-opt:has(:checked) { border-color: var(--brand); background: color-mix(in oklab, var(--brand) 6%, transparent); }
+.pay-opt:has(:focus-visible) { outline: 3px solid var(--brand); outline-offset: 2px; }
+.pay-opt b { display: flex; align-items: center; gap: 0.6rem; font-size: 0.98rem; }
+.pay-opt .bullet {
+  width: 19px; height: 19px; border-radius: 999px;
+  border: 1.5px solid var(--line-strong);
+  display: grid; place-items: center; flex: none;
+}
+.pay-opt:has(:checked) .bullet { border-color: var(--brand); }
+.pay-opt:has(:checked) .bullet::after {
+  content: ""; width: 10px; height: 10px; border-radius: 999px; background: var(--brand);
+}
+.pay-opt small { display: block; margin-top: 0.35rem; padding-left: 1.75rem; color: var(--ink-soft); font-size: 0.87rem; line-height: 1.45; }
+
 .recap {
   background: var(--surface);
   border-radius: var(--radius);
@@ -805,7 +831,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--brand); outline:
 <div class="pitch-bar">
   <div class="shell">
     <span><strong>Proposition de nouveau site</strong> pour Le Délice Boncelles</span>
-    <span>Démonstration : vous pouvez cliquer, remplir un panier et commander pour de faux.</span>
+    <span>Démonstration : cliquez, remplissez un panier, commandez et payez pour de faux.</span>
   </div>
 </div>
 
@@ -1415,6 +1441,32 @@ input:focus, select:focus, textarea:focus { border-color: var(--brand); outline:
     var noteI = field("mot", "Un mot pour l'équipe ?", "(facultatif)", "textarea", "Baguette bien cuite, tarte à couper en 8…");
     fsYou.appendChild(fields);
 
+    // Paiement
+    var payMode = "ONLINE";
+    var fsPay = document.createElement("fieldset");
+    fsPay.appendChild(el("legend", null, "Comment souhaitez-vous payer ?"));
+    var payWrap = el("div", "pay-choice");
+    [
+      { key: "ONLINE", title: "Maintenant, en ligne", detail: "Bancontact ou carte bancaire. Rien à régler au comptoir." },
+      { key: "COUNTER", title: "Au comptoir, au retrait", detail: "Vous payez sur place, en carte ou en liquide." }
+    ].forEach(function (opt, i) {
+      var lab = el("label", "pay-opt");
+      var input = document.createElement("input");
+      input.type = "radio";
+      input.name = "pay";
+      input.value = opt.key;
+      if (i === 0) input.checked = true;
+      input.addEventListener("change", function () { payMode = opt.key; updateSendLabel(); });
+      var b = el("b");
+      b.appendChild(el("span", "bullet"));
+      b.appendChild(document.createTextNode(opt.title));
+      lab.appendChild(input);
+      lab.appendChild(b);
+      lab.appendChild(el("small", null, opt.detail));
+      payWrap.appendChild(lab);
+    });
+    fsPay.appendChild(payWrap);
+
     // Récap
     var recap = el("div", "recap");
     var ul = document.createElement("ul");
@@ -1432,19 +1484,23 @@ input:focus, select:focus, textarea:focus { border-color: var(--brand); outline:
     recap.appendChild(ul);
     recap.appendChild(sum);
 
-    var send = el("button", "btn btn--solid btn--block btn--lg", "Confirmer ma commande");
+    var send = el("button", "btn btn--solid btn--block btn--lg", "Payer et confirmer");
     send.type = "submit";
+    function updateSendLabel() {
+      send.textContent = payMode === "ONLINE" ? "Payer et confirmer" : "Confirmer ma commande";
+    }
 
     form.appendChild(fsDay);
     form.appendChild(hourWrap);
     form.appendChild(fsYou);
+    form.appendChild(fsPay);
     form.appendChild(recap);
     form.appendChild(send);
 
     form.addEventListener("submit", function (ev) {
       ev.preventDefault();
       if (!sel.value) { sel.focus(); return; }
-      confirmOrder(chosenDay, sel.value, nameI.value.trim());
+      confirmOrder(chosenDay, sel.value, nameI.value.trim(), payMode);
     });
 
     body.appendChild(form);
@@ -1459,7 +1515,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--brand); outline:
     nameI.focus({ preventScroll: true });
   }
 
-  function confirmOrder(day, slot, name) {
+  function confirmOrder(day, slot, name, payMode) {
     var num = 1000 + Math.floor(Math.random() * 900) + 1;
     var items = Object.keys(cart).map(function (id) {
       var p = byId(id);
@@ -1474,8 +1530,11 @@ input:focus, select:focus, textarea:focus { border-color: var(--brand); outline:
     var check = el("div", "check");
     check.innerHTML = '<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12.5 9.5 18 20 6.5"/></svg>';
     done.appendChild(check);
-    done.appendChild(el("h2", null, (first ? "Merci " + first + ", c" : "Merci, c") + "'est noté."));
-    done.appendChild(el("p", null, "Présentez simplement votre numéro au comptoir."));
+    var paid = payMode === "ONLINE";
+    done.appendChild(el("h2", null, (first ? "Merci " + first + ", c" : "Merci, c") + (paid ? "'est payé." : "'est noté.")));
+    done.appendChild(el("p", null, paid
+      ? "Présentez votre numéro au comptoir, il n'y aura rien à régler."
+      : "Présentez simplement votre numéro au comptoir."));
     done.appendChild(el("p", "num", "n° " + num));
 
     var list = document.createElement("ul");
@@ -1494,7 +1553,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--brand); outline:
     var when = el("div", "when");
     when.style.cssText = "margin-top:1.2rem;padding-top:1.1rem;border-top:1px solid var(--line);max-width:32ch;margin-inline:auto";
     when.appendChild(el("b", null, frDate(day)));
-    when.appendChild(el("span", null, "vers " + slot.replace(":", "h") + " · " + money(sum) + " à payer au comptoir"));
+    when.appendChild(el("span", null, "vers " + slot.replace(":", "h") + " · " + money(sum) + (paid ? " déjà payés" : " à payer au comptoir")));
     done.appendChild(when);
 
     var note = el("div", "demo-note");
