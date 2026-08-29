@@ -21,6 +21,7 @@
    —————————————————————————————————————————————— */
 
 :root {
+  color-scheme: light;
   --bg:          oklch(1 0 0);
   --surface:     oklch(0.968 0.007 40);
   --ink:         oklch(0.20 0.012 35);
@@ -44,41 +45,10 @@
   --shell: min(1180px, 100% - 2.5rem);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --bg:          oklch(0.17 0.014 34);
-    --surface:     oklch(0.225 0.018 34);
-    --ink:         oklch(0.955 0.008 60);
-    --ink-soft:    oklch(0.76 0.017 45);
-    --brand:       oklch(0.70 0.16 34);
-    --brand-dark:  oklch(0.76 0.15 36);
-    --brand-bright:oklch(0.75 0.155 35);
-    --deep:        oklch(0.135 0.012 34);
-    --line:        oklch(0.31 0.018 34);
-    --line-strong: oklch(0.42 0.024 34);
-    --on-brand:    oklch(0.16 0.012 34);
-    --ready:       oklch(0.72 0.13 152);
-    --overlay:     oklch(0.09 0.01 34 / 0.7);
-    --shadow:      0 6px 22px oklch(0 0 0 / 0.5);
-  }
-}
-
-:root[data-theme="dark"] {
-  --bg:          oklch(0.17 0.014 34);
-  --surface:     oklch(0.225 0.018 34);
-  --ink:         oklch(0.955 0.008 60);
-  --ink-soft:    oklch(0.76 0.017 45);
-  --brand:       oklch(0.70 0.16 34);
-  --brand-dark:  oklch(0.76 0.15 36);
-  --brand-bright:oklch(0.75 0.155 35);
-  --deep:        oklch(0.135 0.012 34);
-  --line:        oklch(0.31 0.018 34);
-  --line-strong: oklch(0.42 0.024 34);
-  --on-brand:    oklch(0.16 0.012 34);
-  --ready:       oklch(0.72 0.13 152);
-  --overlay:     oklch(0.09 0.01 34 / 0.7);
-  --shadow:      0 6px 22px oklch(0 0 0 / 0.5);
-}
+/* Cette page est une maquette de vente : elle doit montrer exactement le
+   site proposé, identique pour tout le monde. Elle reste donc en clair
+   quel que soit le réglage de l'appareil du visiteur. `color-scheme: light`
+   garde aussi les champs de formulaire natifs en clair. */
 
 * { box-sizing: border-box; }
 
